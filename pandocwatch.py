@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -129,17 +129,19 @@ def getDirectoryWatchedElements():
 def recompile():
 
     config = Configuration.Instance()
-    print >> sys.stderr, "Updating the output at %s" % get_now()
-    print "executing command : " + config.getCommand()
-    #print "path : " + os.path.abspath(".")
+    print("Updating the output at %s" % get_now(), file=sys.stderr)
+    print("executing command : " + config.getCommand())
+    #print("path : " + os.path.abspath("."))
     os.chdir(os.path.abspath(os.getcwd()))
     try :
-        output = subprocess.check_output(config.getCommand(),stderr=subprocess.STDOUT,shell=True)
-        #print output
-        print "No error found"
+        output = subprocess.check_output(config.getCommand(), stderr=subprocess.STDOUT, shell=True, text=True)
+        #print(output)
+        print("No error found")
     except subprocess.CalledProcessError as err:
-        print "Error : " + err.output
-        #print "Error append"
+        # err.output may be bytes in some versions; ensure string
+        out = err.output.decode('utf-8', errors='ignore') if isinstance(err.output, bytes) else err.output
+        print("Error : " + out)
+        #print("Error append")
 
 
 class ChangeHandler(FileSystemEventHandler):
@@ -155,12 +157,12 @@ class ChangeHandler(FileSystemEventHandler):
             for (bpath,bm_time) in config.getDirContentAndTime() :
                 if path == bpath :
                     if m_time > bm_time :
-                        print "File " + path + " has changed. Recompiling."
+                        print("File " + path + " has changed. Recompiling.")
                         found = True
 
                         config.setDirContentAndTime(local_dir_content)
                         recompile()
-                        print "Recompilation done"
+                        print("Recompilation done")
                         break
             if found :
                 break
@@ -170,12 +172,13 @@ class ChangeHandler(FileSystemEventHandler):
         #    recompile()
 
 def parseOptions():
-    pandoc_output = subprocess.Popen(["pandoc", "--help"], stdout=subprocess.PIPE).communicate()[0]
+    # capture pandoc help output as text
+    pandoc_output = subprocess.Popen(["pandoc", "--help"], stdout=subprocess.PIPE, text=True).communicate()[0]
     added_epilog = '\n'.join(pandoc_output.split("\n")[1:])
     epilog = "-------------------------------------------\nPandoc standard options are: \n\n" + added_epilog
     #print epilog
     parser = argparse.ArgumentParser(description="Watcher for pandoc compilation", epilog=epilog,formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-e", "--exclude", dest="exclusions", default=".pdf,.tex,doc,bin,common", required=False,
+    parser.add_argument("-e", "--exclude", dest="exclusions", default=".pdf,.tex,doc,bin,common,.DS_Store", required=False,
                         help="The extensions (.pdf for pdf files) or the folders to exclude from watch operations separated with commas")
     #parser.add_argument(dest='command', nargs=argparse.REMAINDER)
     args = parser.parse_known_args()
@@ -193,9 +196,9 @@ def parseOptions():
     pandoc_options = ' '.join(args[1])
 
     if not pandoc_options :
-        print "pandoc options must be provided!\n"
+        print("pandoc options must be provided!\n")
         parser.print_help()
-        exit()
+        sys.exit(1)
 
     config.setCommand("pandoc " + pandoc_options)
 
@@ -203,8 +206,8 @@ def main():
 
     pandoc_path = which("pandoc")
     if not pandoc_path :
-        print "pandoc executable must be in the path to be used by pandoc-watch!"
-        exit()
+        print("pandoc executable must be in the path to be used by pandoc-watch!")
+        sys.exit(1)
 
     config = Configuration.Instance()
 
@@ -212,7 +215,7 @@ def main():
 
     config.setDirContentAndTime(getDirectoryWatchedElements())
 
-    print "Starting pandoc watcher ..."
+    print("Starting pandoc watcher ...")
 
     while True:
         event_handler = ChangeHandler()
@@ -223,12 +226,12 @@ def main():
             while True:
                 time.sleep(1)
         except KeyboardInterrupt as err:
-            print str(err)
+            print(str(err))
             observer.stop()
 
-        print "Stopping pandoc watcher ..."
+        print("Stopping pandoc watcher ...")
 
-        exit()
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
