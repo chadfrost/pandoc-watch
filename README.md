@@ -43,7 +43,7 @@ Aside from this option, the remaining is passed to the `pandoc` executable witho
 
 ### Default exclusions
 
-If no exclusion option is provided the default value is `.pdf,.tex,doc,bin,common`. This default values fit my needs and can be modified if necessary.
+If no exclusion option is provided the default value is `.pdf,.tex,doc,bin,common,.DS_Store,.git,.venv,.gitignore,.gitmodules`. These default values fit my needs and can be modified if necessary.
 
 ### Excluding file extensions from the monitoring
 

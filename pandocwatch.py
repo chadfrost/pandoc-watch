@@ -178,7 +178,7 @@ def parseOptions():
     epilog = "-------------------------------------------\nPandoc standard options are: \n\n" + added_epilog
     #print epilog
     parser = argparse.ArgumentParser(description="Watcher for pandoc compilation", epilog=epilog,formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-e", "--exclude", dest="exclusions", default=".pdf,.tex,doc,bin,common,.DS_Store", required=False,
+    parser.add_argument("-e", "--exclude", dest="exclusions", default=".pdf,.tex,doc,bin,common,.DS_Store,.git,.venv,.gitignore,.gitmodules", required=False,
                         help="The extensions (.pdf for pdf files) or the folders to exclude from watch operations separated with commas")
     #parser.add_argument(dest='command', nargs=argparse.REMAINDER)
     args = parser.parse_known_args()
