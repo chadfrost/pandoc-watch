@@ -129,17 +129,23 @@ def getDirectoryWatchedElements():
 def recompile():
 
     config = Configuration.Instance()
-    print >> sys.stderr, "Updating the output at %s" % get_now()
-    print "executing command : " + config.getCommand()
+    print("Updating the output at %s" % get_now(), file=sys.stderr)
+    print("executing command : " + config.getCommand())
     #print "path : " + os.path.abspath(".")
     os.chdir(os.path.abspath(os.getcwd()))
     try :
         output = subprocess.check_output(config.getCommand(),stderr=subprocess.STDOUT,shell=True)
-        #print output
-        print "No error found"
+        # output is bytes on Python 3; decode if needed
+        try:
+            _ = output.decode('utf-8', errors='ignore')
+        except Exception:
+            pass
+        print("No error found")
     except subprocess.CalledProcessError as err:
-        print "Error : " + err.output
-        #print "Error append"
+        out = err.output
+        if isinstance(out, bytes):
+            out = out.decode('utf-8', errors='ignore')
+        print("Error : " + str(out))
 
 
 class ChangeHandler(FileSystemEventHandler):
@@ -155,12 +161,12 @@ class ChangeHandler(FileSystemEventHandler):
             for (bpath,bm_time) in config.getDirContentAndTime() :
                 if path == bpath :
                     if m_time > bm_time :
-                        print "File " + path + " has changed. Recompiling."
+                        print("File " + path + " has changed. Recompiling.")
                         found = True
 
                         config.setDirContentAndTime(local_dir_content)
                         recompile()
-                        print "Recompilation done"
+                        print("Recompilation done")
                         break
             if found :
                 break
@@ -171,6 +177,8 @@ class ChangeHandler(FileSystemEventHandler):
 
 def parseOptions():
     pandoc_output = subprocess.Popen(["pandoc", "--help"], stdout=subprocess.PIPE).communicate()[0]
+    if isinstance(pandoc_output, bytes):
+        pandoc_output = pandoc_output.decode('utf-8', errors='ignore')
     added_epilog = '\n'.join(pandoc_output.split("\n")[1:])
     epilog = "-------------------------------------------\nPandoc standard options are: \n\n" + added_epilog
     #print epilog
@@ -193,7 +201,7 @@ def parseOptions():
     pandoc_options = ' '.join(args[1])
 
     if not pandoc_options :
-        print "pandoc options must be provided!\n"
+        print("pandoc options must be provided!\n")
         parser.print_help()
         exit()
 
@@ -203,7 +211,7 @@ def main():
 
     pandoc_path = which("pandoc")
     if not pandoc_path :
-        print "pandoc executable must be in the path to be used by pandoc-watch!"
+        print("pandoc executable must be in the path to be used by pandoc-watch!")
         exit()
 
     config = Configuration.Instance()
@@ -212,7 +220,7 @@ def main():
 
     config.setDirContentAndTime(getDirectoryWatchedElements())
 
-    print "Starting pandoc watcher ..."
+    print("Starting pandoc watcher ...")
 
     while True:
         event_handler = ChangeHandler()
@@ -223,10 +231,10 @@ def main():
             while True:
                 time.sleep(1)
         except KeyboardInterrupt as err:
-            print str(err)
+            print(str(err))
             observer.stop()
 
-        print "Stopping pandoc watcher ..."
+        print("Stopping pandoc watcher ...")
 
         exit()
 
